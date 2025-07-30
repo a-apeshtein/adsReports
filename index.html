@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>סטטיסטיקות פרסומות</title>
+
+    <!-- Bootstrap RTL -->
+    <link rel="stylesheet" href="https://cdn.rtlcss.com/bootstrap/v4.5.3/css/bootstrap.min.css"
+        integrity="sha384-JvExCACAZcHNJEc7156QaHXTnQL3hQBixvj5RV5buE7vgnNEzzskDtx9NQ4p6BJe" crossorigin="anonymous">
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="style.css">
+
+    <!-- jQuery -->
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.5.1/dist/jquery.slim.min.js"
+        integrity="sha384-DfXdz2htPH0lsSSs5nCTpuj/zy4C+OGpamoFVy38MVBnE+IbbVYUew+OrCXaRkfj"
+        crossorigin="anonymous"></script>
+    
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.1/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-fQybjgWLrvvRgtW6bFlB7jaZrFsaBXjsOMm/tB9LTS58ONXgqbR9W8oWht/amnpF"
+        crossorigin="anonymous"></script>
+    
+    <!-- AngularJS -->
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.6.9/angular.min.js"></script>
+</head>
+
+<body ng-app="adsReportsApp" ng-controller="MainController">
+    <div class="container-fluid">
+        <!-- Header -->
+        <div class="row bg-primary text-white p-3 mb-4">
+            <div class="col-12">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h1 class="mb-0">
+                        <i class="fas fa-chart-line me-2"></i>
+                        סטטיסטיקות פרסומות
+                    </h1>
+                    <div ng-if="isLoggedIn">
+                        <span class="me-3">
+                            <i class="fas fa-user me-1"></i>
+                            מחובר: {{credentials.userName}}
+                        </span>
+                        <button class="btn btn-outline-light btn-sm" ng-click="logout()">
+                            <i class="fas fa-sign-out-alt me-1"></i>
+                            התנתק
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Login Form -->
+        <div class="row mb-4" ng-if="!isLoggedIn">
+            <div class="col-md-6 mx-auto">
+                <div class="card">
+                    <div class="card-header bg-primary text-white">
+                        <h4 class="mb-0"><i class="fas fa-sign-in-alt me-2"></i>התחברות למערכת</h4>
+                    </div>
+                    <div class="card-body">
+                        <form ng-submit="login()">
+                            <div class="form-group">
+                                <label for="userName">שם משתמש:</label>
+                                <input type="text" class="form-control" id="userName" ng-model="credentials.userName" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="password">סיסמה:</label>
+                                <input type="password" class="form-control" id="password" ng-model="credentials.password" required>
+                            </div>
+                            <button type="submit" class="btn btn-primary btn-block">
+                                <i class="fas fa-sign-in-alt me-2"></i>התחבר
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div ng-if="isLoggedIn">
+            <!-- Statistics Cards -->
+            <div class="row mb-4">
+                <div class="col-md-3">
+                    <div class="card bg-primary text-white">
+                        <div class="card-body text-center">
+                            <i class="fas fa-users fa-2x mb-2"></i>
+                            <h4>{{getTotalLeads()}}</h4>
+                            <p class="mb-0">סה"כ Leads</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-success text-white">
+                        <div class="card-body text-center">
+                            <i class="fas fa-mouse-pointer fa-2x mb-2"></i>
+                            <h4>{{getTotalActions()}}</h4>
+                            <p class="mb-0">סה"כ Actions</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-info text-white">
+                        <div class="card-body text-center">
+                            <i class="fas fa-download fa-2x mb-2"></i>
+                            <h4>{{getActionsByType(4)}}</h4>
+                            <p class="mb-0">טעינות</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-warning text-white">
+                        <div class="card-body text-center">
+                            <i class="fas fa-mouse fa-2x mb-2"></i>
+                            <h4>{{getActionsByType(2)}}</h4>
+                            <p class="mb-0">תזוזות עכבר</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Charts Row -->
+            <div class="row mb-4">
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0"><i class="fas fa-chart-pie me-2"></i>התפלגות פעילויות</h5>
+                        </div>
+                        <div class="card-body">
+                            <canvas id="actionsChart" width="400" height="200"></canvas>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0"><i class="fas fa-chart-bar me-2"></i>פעילות לפי חנות</h5>
+                        </div>
+                        <div class="card-body">
+                            <canvas id="storesChart" width="400" height="200"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Enhanced Filters -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0"><i class="fas fa-filter me-2"></i>פילטרים מתקדמים</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-2">
+                                    <label class="filter-label">חנות:</label>
+                                    <select class="form-control" ng-model="filters.store" ng-change="applyFilters()">
+                                        <option value="">כל החנויות</option>
+                                        <option ng-repeat="store in getUniqueStores()" value="{{store}}">חנות {{store}}</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-2">
+                                    <label class="filter-label">סניף:</label>
+                                    <select class="form-control" ng-model="filters.branch" ng-change="applyFilters()">
+                                        <option value="">כל הסניפים</option>
+                                        <option ng-repeat="branch in getUniqueBranches()" value="{{branch}}">סניף {{branch}}</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-2">
+                                    <label class="filter-label">מחשב:</label>
+                                    <select class="form-control" ng-model="filters.computer" ng-change="applyFilters()">
+                                        <option value="">כל המחשבים</option>
+                                        <option ng-repeat="computer in getUniqueComputers()" value="{{computer}}">מחשב {{computer}}</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-2">
+                                    <label class="filter-label">סוג פעולה:</label>
+                                    <select class="form-control" ng-model="filters.actionType" ng-change="applyFilters()">
+                                        <option value="">כל הסוגים</option>
+                                        <option value="0">פרסום עלה</option>
+                                        <option value="1">לחצו לפרטים</option>
+                                        <option value="2">תזוזת עכבר</option>
+                                        <option value="3">הזנת פרטים</option>
+                                        <option value="4">טעינה</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-2">
+                                    <label class="filter-label">מתאריך:</label>
+                                    <input type="date" class="form-control" ng-model="filters.startDate" ng-change="applyFilters()">
+                                </div>
+                                <div class="col-md-2">
+                                    <label class="filter-label">עד תאריך:</label>
+                                    <input type="date" class="form-control" ng-model="filters.endDate" ng-change="applyFilters()">
+                                </div>
+                            </div>
+                            <div class="row mt-3">
+                                <div class="col-12">
+                                    <button class="btn btn-outline-secondary btn-sm" ng-click="clearFilters()">
+                                        <i class="fas fa-times me-1"></i>נקה פילטרים
+                                    </button>
+                                    <button class="btn btn-outline-primary btn-sm" ng-click="exportData()">
+                                        <i class="fas fa-download me-1"></i>ייצא נתונים
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tabs -->
+            <ul class="nav nav-tabs" id="mainTab" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <a class="nav-link active" id="leads-tab" data-toggle="tab" href="#leads" role="tab">
+                        <i class="fas fa-users me-2"></i>לידים
+                    </a>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <a class="nav-link" id="actions-tab" data-toggle="tab" href="#actions" role="tab">
+                        <i class="fas fa-mouse-pointer me-2"></i>פעולות
+                    </a>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <a class="nav-link" id="stations-tab" data-toggle="tab" href="#stations" role="tab">
+                        <i class="fas fa-desktop me-2"></i>דוח הצגת פרסומות בעמדות
+                    </a>
+                </li>
+            </ul>
+
+            <div class="tab-content" id="mainTabContent">
+                <!-- Leads Tab -->
+                <div class="tab-pane fade show active" id="leads" role="tabpanel">
+                    <div class="card mt-3">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0">
+                                <i class="fas fa-users me-2"></i>לידים
+                                <span class="badge badge-primary">סה"כ: {{leads.length}} | מחוקים: {{getDeletedLeads()}} | מוצגים: {{leads.length - getDeletedLeads()}}</span>
+                            </h5>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" ng-model="showDeletedLeads" ng-change="applyFilters()">
+                                <label class="form-check-label">הצג מחוקים</label>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                                        <table class="table table-striped table-hover">
+                            <thead class="thead-dark">
+                                <tr>
+                                    <th>תאריך</th>
+                                    <th>איכות</th>
+                                    <th ng-repeat="item in ad.inputs | orderBy: 'order'">
+                                        {{item.title}}
+                                    </th>
+                                    <th>סטטוס</th>
+                                    <th>קבצים</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr ng-repeat="lead in filteredLeads | orderBy: 'created_at': true">
+                                    <td>{{lead.created_at | date: 'medium'}}</td>
+                                    <td>
+                                        <div class="quality-indicator">
+                                            <span class="quality-dot" ng-class="lead.quality ? 'good' : 'bad'"></span>
+                                            <span>{{lead.id}}</span>
+                                        </div>
+                                    </td>
+                                    <td ng-repeat="item in ad.inputs | orderBy: 'order'">
+                                        {{lead.inputs[item.name]}}
+                                    </td>
+                                    <td>
+                                        <span ng-if="lead.status==2">מחוק</span>
+                                        <span ng-if="lead.status==1">טופל</span>
+                                        <button class="btn btn-sm btn-warning" ng-click="setLeadStatus(lead, 1)" ng-if="lead.status !== 1">
+                                            <i class="fas fa-check me-1"></i>טופל
+                                        </button>
+                                        <button class="btn btn-sm btn-danger" ng-click="setLeadStatus(lead, 2)" ng-if="lead.status !== 2">
+                                            <i class="fas fa-trash me-1"></i>מחק
+                                        </button>
+                                    </td>
+                                    <td>
+                                        <span ng-repeat="filefieldName in ['file1','file2','file3','file4','file5','file6','file7','file8','file9','file10']">
+                                            <span ng-repeat="item1 in lead.inputs.files[filefieldName]">
+                                                <a target="_blank" class="btn btn-sm btn-outline-primary" ng-href="{{'https://ads.safer.link/formFilesDownload/'+lead.id +'/?file='+item1.filename}}">
+                                                    <i class="fas fa-download me-1"></i>{{item1.originalname}}
+                                                </a>
+                                            </span>
+                                        </span>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Actions Tab -->
+                <div class="tab-pane fade" id="actions" role="tabpanel">
+                    <div class="card mt-3">
+                        <div class="card-header">
+                            <h5 class="mb-0">
+                                <i class="fas fa-mouse-pointer me-2"></i>פעולות
+                                <span class="badge badge-primary">סה"כ{{actions.length}} | טעינה: {{getActionsByType(4)}}| לחיצה על פרטים: {{getActionsByType(1)}} | מעבר עכבר: {{getActionsByType(2)}}| הזנת פרטים: {{getActionsByType(3)}}</span>
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                                        <table class="table table-striped table-hover">
+                            <thead class="thead-dark">
+                                <tr>
+                                    <th>תאריך</th>
+                                    <th>עיר</th>
+                                    <th>סוג פעולה</th>
+                                    <th>חנות_סניף_מחשב</th>
+                                    <th>מקור</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr ng-repeat="action in filteredActions | orderBy: 'created_at': true">
+                                    <td>{{action.created_at | date: 'medium'}}</td>
+                                    <td>{{action.city}}</td>
+                                    <td>
+                                        <span class="badge" ng-class="getActionTypeBadgeClass(action.type)">
+                                            {{getActionTypeText(action.type)}}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <span class="badge badge-info">{{action.store_branch_computer}}</span>
+                                    </td>
+                                    <td>{{action.source}}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Stations Tab - דוח הצגת פרסומות בעמדות -->
+                <div class="tab-pane fade" id="stations" role="tabpanel">
+                    <div class="card mt-3">
+                        <div class="card-header">
+                            <h5 class="mb-0">
+                                <i class="fas fa-desktop me-2"></i>דוח הצגת פרסומות בעמדות
+                                <span class="badge badge-primary">ניטור פעילות לפי חנות, סניף ומחשב</span>
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <!-- Statistics Cards for Stations -->
+                            <div class="row mb-4">
+                                <div class="col-md-2">
+                                    <div class="card bg-primary text-white">
+                                        <div class="card-body text-center">
+                                            <i class="fas fa-mouse-pointer fa-2x mb-2"></i>
+                                            <h4 id="totalActionsStations">0</h4>
+                                            <p class="mb-0">סה"כ פעולות</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-2">
+                                    <div class="card bg-success text-white">
+                                        <div class="card-body text-center">
+                                            <i class="fas fa-download fa-2x mb-2"></i>
+                                            <h4 id="totalLoadsStations">0</h4>
+                                            <p class="mb-0">טעינות</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-2">
+                                    <div class="card bg-info text-white">
+                                        <div class="card-body text-center">
+                                            <i class="fas fa-mouse fa-2x mb-2"></i>
+                                            <h4 id="totalMouseMovesStations">0</h4>
+                                            <p class="mb-0">תזוזות עכבר</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-2">
+                                    <div class="card bg-warning text-white">
+                                        <div class="card-body text-center">
+                                            <i class="fas fa-hand-pointer fa-2x mb-2"></i>
+                                            <h4 id="totalClicksStations">0</h4>
+                                            <p class="mb-0">לחיצות</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-2">
+                                    <div class="card bg-danger text-white">
+                                        <div class="card-body text-center">
+                                            <i class="fas fa-keyboard fa-2x mb-2"></i>
+                                            <h4 id="totalKeypressesStations">0</h4>
+                                            <p class="mb-0">הזנות פרטים</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-2">
+                                    <div class="card bg-secondary text-white">
+                                        <div class="card-body text-center">
+                                            <i class="fas fa-store fa-2x mb-2"></i>
+                                            <h4 id="uniqueStoresStations">0</h4>
+                                            <p class="mb-0">חנויות פעילות</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Charts Row -->
+                            <div class="row mb-4">
+                                <div class="col-md-6">
+                                    <div class="card">
+                                        <div class="card-header">
+                                            <h5 class="mb-0"><i class="fas fa-chart-pie me-2"></i>התפלגות פעולות לפי סוג</h5>
+                                        </div>
+                                        <div class="card-body">
+                                            <canvas id="actionsPieChart" width="400" height="200"></canvas>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="card">
+                                        <div class="card-header">
+                                            <h5 class="mb-0"><i class="fas fa-chart-bar me-2"></i>עמדות עם הכי הרבה תזוזות עכבר</h5>
+                                        </div>
+                                        <div class="card-body">
+                                            <canvas id="mouseMovesChart" width="400" height="200"></canvas>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Filters for Stations -->
+                            <div class="row mb-4">
+                                <div class="col-12">
+                                    <div class="card">
+                                        <div class="card-header">
+                                            <h5 class="mb-0"><i class="fas fa-filter me-2"></i>פילטרים לדוח עמדות</h5>
+                                        </div>
+                                        <div class="card-body">
+                                            <div class="row">
+                                                <div class="col-md-4">
+                                                    <label class="filter-label">מזהה חנות</label>
+                                                    <select class="form-control" id="stationStoreFilter" ng-change="applyStationFilters()">
+                                                        <option value="">כל החנויות</option>
+                                                        <option ng-repeat="store in getUniqueStationStores()" value="{{store}}">חנות {{store}}</option>
+                                                    </select>
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <label class="filter-label">מתאריך</label>
+                                                    <input type="date" class="form-control" id="stationStartDate" ng-change="applyStationFilters()">
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <label class="filter-label">עד תאריך</label>
+                                                    <input type="date" class="form-control" id="stationEndDate" ng-change="applyStationFilters()">
+                                                </div>
+                                            </div>
+                                            <div class="row mt-3">
+                                                <div class="col-12">
+                                                    <button class="btn btn-outline-secondary btn-sm" ng-click="clearStationFilters()">
+                                                        <i class="fas fa-times me-1"></i>נקה פילטרים
+                                                    </button>
+                                                    <button class="btn btn-outline-primary btn-sm" ng-click="exportStationsToCSV()">
+                                                        <i class="fas fa-download me-1"></i>ייצא ל-CSV
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Stations Data Table -->
+                            <div class="row">
+                                <div class="col-12">
+                                    <div class="card">
+                                        <div class="card-header">
+                                            <h5 class="mb-0">
+                                                <i class="fas fa-table me-2"></i>טבלת פעילות עמדות
+                                                <span class="badge badge-primary" id="stationsTableCount">0 עמדות</span>
+                                            </h5>
+                                        </div>
+                                        <div class="card-body">
+                                            <div class="table-responsive">
+                                                <table class="table table-striped table-hover">
+                                                    <thead class="thead-dark">
+                                                        <tr>
+                                                            <th>מזהה חנות</th>
+                                                            <th>מזהה סניף</th>
+                                                            <th>מזהה מחשב</th>
+                                                            <th>תזוזות עכבר</th>
+                                                            <th>טעינות</th>
+                                                            <th>הזנות פרטים</th>
+                                                            <th>לחיצות</th>
+                                                            <th>מספר לידים</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody id="stationsTableBody">
+                                                        <!-- Data will be populated here -->
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading Spinner -->
+    <div class="loading-overlay" ng-if="loading">
+        <div class="spinner-border text-primary" role="status">
+            <span class="sr-only">טוען...</span>
+        </div>
+    </div>
+
+    <!-- Custom JS -->
+    <script src="app.js"></script>
+</body>
+
+</html> 
