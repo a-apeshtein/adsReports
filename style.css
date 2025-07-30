@@ -80,6 +80,19 @@ body {
     border-radius: 20px;
 }
 
+/* Store and Branch Name Display */
+.store-name, .branch-name {
+    font-weight: 500;
+    color: #495057;
+    margin-right: 5px;
+}
+
+.store-id, .branch-id {
+    font-size: 0.85em;
+    color: #6c757d;
+    font-weight: normal;
+}
+
 /* Button Enhancements */
 .btn {
     border-radius: 5px;
@@ -146,12 +159,6 @@ body {
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
 }
 
-/* Chart Containers */
-canvas {
-    max-width: 100%;
-    height: auto !important;
-}
-
 /* Responsive Design */
 @media (max-width: 768px) {
     .container-fluid {
@@ -174,6 +181,10 @@ canvas {
     .badge {
         font-size: 0.7em;
         padding: 0.4em 0.6em;
+    }
+    
+    .store-name, .branch-name {
+        font-size: 0.9em;
     }
 }
 
@@ -329,6 +340,16 @@ canvas {
 .form-control:focus,
 .form-check-input:focus {
     box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+/* Store and Branch Name Display in Tables */
+.table td .badge + span {
+    margin-right: 8px;
+    font-weight: 500;
+}
+
+.table td .badge {
+    margin-left: 5px;
 }
 
 /* Print Styles */

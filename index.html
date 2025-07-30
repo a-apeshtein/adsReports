@@ -5,6 +5,7 @@
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
     <title>סטטיסטיקות פרסומות</title>
 
     <!-- Bootstrap RTL -->
@@ -13,9 +14,6 @@
     
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    
-    <!-- Chart.js -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     
     <!-- Custom CSS -->
     <link rel="stylesheet" href="style.css">
@@ -32,6 +30,8 @@
     
     <!-- AngularJS -->
     <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.6.9/angular.min.js"></script>
+    <!-- SheetJS (xlsx) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </head>
 
 <body ng-app="adsReportsApp" ng-controller="MainController">
@@ -87,6 +87,7 @@
         <!-- Main Content -->
         <div ng-if="isLoggedIn">
             <!-- Statistics Cards -->
+            <!--
             <div class="row mb-4">
                 <div class="col-md-3">
                     <div class="card bg-primary text-white">
@@ -125,32 +126,10 @@
                     </div>
                 </div>
             </div>
-
-            <!-- Charts Row -->
-            <div class="row mb-4">
-                <div class="col-md-6">
-                    <div class="card">
-                        <div class="card-header">
-                            <h5 class="mb-0"><i class="fas fa-chart-pie me-2"></i>התפלגות פעילויות</h5>
-                        </div>
-                        <div class="card-body">
-                            <canvas id="actionsChart" width="400" height="200"></canvas>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-6">
-                    <div class="card">
-                        <div class="card-header">
-                            <h5 class="mb-0"><i class="fas fa-chart-bar me-2"></i>פעילות לפי חנות</h5>
-                        </div>
-                        <div class="card-body">
-                            <canvas id="storesChart" width="400" height="200"></canvas>
-                        </div>
-                    </div>
-                </div>
-            </div>
+            -->
 
             <!-- Enhanced Filters -->
+            <!--
             <div class="row mb-4">
                 <div class="col-12">
                     <div class="card">
@@ -163,14 +142,14 @@
                                     <label class="filter-label">חנות:</label>
                                     <select class="form-control" ng-model="filters.store" ng-change="applyFilters()">
                                         <option value="">כל החנויות</option>
-                                        <option ng-repeat="store in getUniqueStores()" value="{{store}}">חנות {{store}}</option>
+                                        <option ng-repeat="store in getUniqueStores()" value="{{store}}">{{getStoreName(store)}}</option>
                                     </select>
                                 </div>
                                 <div class="col-md-2">
                                     <label class="filter-label">סניף:</label>
                                     <select class="form-control" ng-model="filters.branch" ng-change="applyFilters()">
                                         <option value="">כל הסניפים</option>
-                                        <option ng-repeat="branch in getUniqueBranches()" value="{{branch}}">סניף {{branch}}</option>
+                                        <option ng-repeat="branch in getUniqueBranches()" value="{{branch}}">{{getBranchName(branch)}}</option>
                                     </select>
                                 </div>
                                 <div class="col-md-2">
@@ -214,8 +193,10 @@
                     </div>
                 </div>
             </div>
+            -->
 
             <!-- Tabs -->
+            <!--
             <ul class="nav nav-tabs" id="mainTab" role="tablist">
                 <li class="nav-item" role="presentation">
                     <a class="nav-link active" id="leads-tab" data-toggle="tab" href="#leads" role="tab">
@@ -232,10 +213,17 @@
                         <i class="fas fa-desktop me-2"></i>דוח הצגת פרסומות בעמדות
                     </a>
                 </li>
+                <li class="nav-item" role="presentation">
+                    <a class="nav-link" id="computers-tab" data-toggle="tab" href="#computers" role="tab">
+                        <i class="fas fa-server me-2"></i>סטטיסטיקות מחשבים
+                    </a>
+                </li>
             </ul>
+            -->
 
             <div class="tab-content" id="mainTabContent">
                 <!-- Leads Tab -->
+                <!--
                 <div class="tab-pane fade show active" id="leads" role="tabpanel">
                     <div class="card mt-3">
                         <div class="card-header d-flex justify-content-between align-items-center">
@@ -250,58 +238,60 @@
                         </div>
                         <div class="card-body">
                             <div class="table-responsive">
-                                                        <table class="table table-striped table-hover">
-                            <thead class="thead-dark">
-                                <tr>
-                                    <th>תאריך</th>
-                                    <th>איכות</th>
-                                    <th ng-repeat="item in ad.inputs | orderBy: 'order'">
-                                        {{item.title}}
-                                    </th>
-                                    <th>סטטוס</th>
-                                    <th>קבצים</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr ng-repeat="lead in filteredLeads | orderBy: 'created_at': true">
-                                    <td>{{lead.created_at | date: 'medium'}}</td>
-                                    <td>
-                                        <div class="quality-indicator">
-                                            <span class="quality-dot" ng-class="lead.quality ? 'good' : 'bad'"></span>
-                                            <span>{{lead.id}}</span>
-                                        </div>
-                                    </td>
-                                    <td ng-repeat="item in ad.inputs | orderBy: 'order'">
-                                        {{lead.inputs[item.name]}}
-                                    </td>
-                                    <td>
-                                        <span ng-if="lead.status==2">מחוק</span>
-                                        <span ng-if="lead.status==1">טופל</span>
-                                        <button class="btn btn-sm btn-warning" ng-click="setLeadStatus(lead, 1)" ng-if="lead.status !== 1">
-                                            <i class="fas fa-check me-1"></i>טופל
-                                        </button>
-                                        <button class="btn btn-sm btn-danger" ng-click="setLeadStatus(lead, 2)" ng-if="lead.status !== 2">
-                                            <i class="fas fa-trash me-1"></i>מחק
-                                        </button>
-                                    </td>
-                                    <td>
-                                        <span ng-repeat="filefieldName in ['file1','file2','file3','file4','file5','file6','file7','file8','file9','file10']">
-                                            <span ng-repeat="item1 in lead.inputs.files[filefieldName]">
-                                                <a target="_blank" class="btn btn-sm btn-outline-primary" ng-href="{{'https://ads.safer.link/formFilesDownload/'+lead.id +'/?file='+item1.filename}}">
-                                                    <i class="fas fa-download me-1"></i>{{item1.originalname}}
-                                                </a>
-                                            </span>
-                                        </span>
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
+                                <table class="table table-striped table-hover">
+                                    <thead class="thead-dark">
+                                        <tr>
+                                            <th>תאריך</th>
+                                            <th>איכות</th>
+                                            <th ng-repeat="item in ad.inputs | orderBy: 'order'">
+                                                {{item.title}}
+                                            </th>
+                                            <th>סטטוס</th>
+                                            <th>קבצים</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr ng-repeat="lead in filteredLeads | orderBy: 'created_at': true">
+                                            <td>{{lead.created_at | date: 'medium'}}</td>
+                                            <td>
+                                                <div class="quality-indicator">
+                                                    <span class="quality-dot" ng-class="lead.quality ? 'good' : 'bad'"></span>
+                                                    <span>{{lead.id}}</span>
+                                                </div>
+                                            </td>
+                                            <td ng-repeat="item in ad.inputs | orderBy: 'order'">
+                                                {{lead.inputs[item.name]}}
+                                            </td>
+                                            <td>
+                                                <span ng-if="lead.status==2">מחוק</span>
+                                                <span ng-if="lead.status==1">טופל</span>
+                                                <button class="btn btn-sm btn-warning" ng-click="setLeadStatus(lead, 1)" ng-if="lead.status !== 1">
+                                                    <i class="fas fa-check me-1"></i>טופל
+                                                </button>
+                                                <button class="btn btn-sm btn-danger" ng-click="setLeadStatus(lead, 2)" ng-if="lead.status !== 2">
+                                                    <i class="fas fa-trash me-1"></i>מחק
+                                                </button>
+                                            </td>
+                                            <td>
+                                                <span ng-repeat="filefieldName in ['file1','file2','file3','file4','file5','file6','file7','file8','file9','file10']">
+                                                    <span ng-repeat="item1 in lead.inputs.files[filefieldName]">
+                                                        <a target="_blank" class="btn btn-sm btn-outline-primary" ng-href="{{'https://ads.safer.link/formFilesDownload/'+lead.id +'/?file='+item1.filename}}">
+                                                            <i class="fas fa-download me-1"></i>{{item1.originalname}}
+                                                        </a>
+                                                    </span>
+                                                </span>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
                             </div>
                         </div>
                     </div>
                 </div>
+                -->
 
                 <!-- Actions Tab -->
+                <!--
                 <div class="tab-pane fade" id="actions" role="tabpanel">
                     <div class="card mt-3">
                         <div class="card-header">
@@ -312,38 +302,40 @@
                         </div>
                         <div class="card-body">
                             <div class="table-responsive">
-                                                        <table class="table table-striped table-hover">
-                            <thead class="thead-dark">
-                                <tr>
-                                    <th>תאריך</th>
-                                    <th>עיר</th>
-                                    <th>סוג פעולה</th>
-                                    <th>חנות_סניף_מחשב</th>
-                                    <th>מקור</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr ng-repeat="action in filteredActions | orderBy: 'created_at': true">
-                                    <td>{{action.created_at | date: 'medium'}}</td>
-                                    <td>{{action.city}}</td>
-                                    <td>
-                                        <span class="badge" ng-class="getActionTypeBadgeClass(action.type)">
-                                            {{getActionTypeText(action.type)}}
-                                        </span>
-                                    </td>
-                                    <td>
-                                        <span class="badge badge-info">{{action.store_branch_computer}}</span>
-                                    </td>
-                                    <td>{{action.source}}</td>
-                                </tr>
-                            </tbody>
-                        </table>
+                                <table class="table table-striped table-hover">
+                                    <thead class="thead-dark">
+                                        <tr>
+                                            <th>תאריך</th>
+                                            <th>עיר</th>
+                                            <th>סוג פעולה</th>
+                                            <th>חנות_סניף_מחשב</th>
+                                            <th>מקור</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr ng-repeat="action in filteredActions | orderBy: 'created_at': true">
+                                            <td>{{action.created_at | date: 'medium'}}</td>
+                                            <td>{{action.city}}</td>
+                                            <td>
+                                                <span class="badge" ng-class="getActionTypeBadgeClass(action.type)">
+                                                    {{getActionTypeText(action.type)}}
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <span class="badge badge-info">{{action.store_branch_computer}}</span>
+                                            </td>
+                                            <td>{{action.source}}</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
                             </div>
                         </div>
                     </div>
                 </div>
+                -->
 
                 <!-- Stations Tab - דוח הצגת פרסומות בעמדות -->
+                <!--
                 <div class="tab-pane fade" id="stations" role="tabpanel">
                     <div class="card mt-3">
                         <div class="card-header">
@@ -353,7 +345,8 @@
                             </h5>
                         </div>
                         <div class="card-body">
-                            <!-- Statistics Cards for Stations -->
+                            <!-- Hidden: Statistics Cards and Filters for Stations -->
+                            <!--
                             <div class="row mb-4">
                                 <div class="col-md-2">
                                     <div class="card bg-primary text-white">
@@ -411,31 +404,6 @@
                                 </div>
                             </div>
 
-                            <!-- Charts Row -->
-                            <div class="row mb-4">
-                                <div class="col-md-6">
-                                    <div class="card">
-                                        <div class="card-header">
-                                            <h5 class="mb-0"><i class="fas fa-chart-pie me-2"></i>התפלגות פעולות לפי סוג</h5>
-                                        </div>
-                                        <div class="card-body">
-                                            <canvas id="actionsPieChart" width="400" height="200"></canvas>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="col-md-6">
-                                    <div class="card">
-                                        <div class="card-header">
-                                            <h5 class="mb-0"><i class="fas fa-chart-bar me-2"></i>עמדות עם הכי הרבה תזוזות עכבר</h5>
-                                        </div>
-                                        <div class="card-body">
-                                            <canvas id="mouseMovesChart" width="400" height="200"></canvas>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Filters for Stations -->
                             <div class="row mb-4">
                                 <div class="col-12">
                                     <div class="card">
@@ -446,18 +414,18 @@
                                             <div class="row">
                                                 <div class="col-md-4">
                                                     <label class="filter-label">מזהה חנות</label>
-                                                    <select class="form-control" id="stationStoreFilter" ng-change="applyStationFilters()">
+                                                    <select class="form-control" id="stationStoreFilter" ng-model="stationFilters.store" ng-change="applyStationFilters()">
                                                         <option value="">כל החנויות</option>
-                                                        <option ng-repeat="store in getUniqueStationStores()" value="{{store}}">חנות {{store}}</option>
+                                                        <option ng-repeat="store in getUniqueStationStores()" value="{{store}}">{{getStoreName(store)}}</option>
                                                     </select>
                                                 </div>
                                                 <div class="col-md-4">
                                                     <label class="filter-label">מתאריך</label>
-                                                    <input type="date" class="form-control" id="stationStartDate" ng-change="applyStationFilters()">
+                                                    <input type="date" class="form-control" id="stationStartDate" ng-model="stationFilters.startDate" ng-change="applyStationFilters()">
                                                 </div>
                                                 <div class="col-md-4">
                                                     <label class="filter-label">עד תאריך</label>
-                                                    <input type="date" class="form-control" id="stationEndDate" ng-change="applyStationFilters()">
+                                                    <input type="date" class="form-control" id="stationEndDate" ng-model="stationFilters.endDate" ng-change="applyStationFilters()">
                                                 </div>
                                             </div>
                                             <div class="row mt-3">
@@ -475,7 +443,6 @@
                                 </div>
                             </div>
 
-                            <!-- Stations Data Table -->
                             <div class="row">
                                 <div class="col-12">
                                     <div class="card">
@@ -490,8 +457,8 @@
                                                 <table class="table table-striped table-hover">
                                                     <thead class="thead-dark">
                                                         <tr>
-                                                            <th>מזהה חנות</th>
-                                                            <th>מזהה סניף</th>
+                                                            <th>חנות</th>
+                                                            <th>סניף</th>
                                                             <th>מזהה מחשב</th>
                                                             <th>תזוזות עכבר</th>
                                                             <th>טעינות</th>
@@ -502,6 +469,156 @@
                                                     </thead>
                                                     <tbody id="stationsTableBody">
                                                         <!-- Data will be populated here -->
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            -->
+                        </div>
+                    </div>
+                </div>
+                -->
+
+                <!-- Computers Tab - סטטיסטיקות מחשבים -->
+                <div class="tab-pane fade show active" id="computers" role="tabpanel">
+                    <div class="card mt-3">
+                        <div class="card-header">
+                            <h5 class="mb-0">
+                                <i class="fas fa-server me-2"></i>סטטיסטיקות מחשבים
+                                <span class="badge badge-primary">סיכום טעינות לפי מחשב, סניף וחנות</span>
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <!-- Summary Statistics -->
+                            <div class="row mb-4">
+                                <div class="col-md-3">
+                                    <div class="card bg-primary text-white">
+                                        <div class="card-body text-center">
+                                            <i class="fas fa-server fa-2x mb-2"></i>
+                                            <h4>{{getTotalComputers()}}</h4>
+                                            <p class="mb-0">סה"כ מחשבים</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="card bg-success text-white">
+                                        <div class="card-body text-center">
+                                            <i class="fas fa-download fa-2x mb-2"></i>
+                                            <h4>{{getTotalLoadings()}}</h4>
+                                            <p class="mb-0">סה"כ טעינות</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="card bg-info text-white">
+                                        <div class="card-body text-center">
+                                            <i class="fas fa-store fa-2x mb-2"></i>
+                                            <h4>{{getTotalStores()}}</h4>
+                                            <p class="mb-0">סה"כ חנויות</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="card bg-warning text-white">
+                                        <div class="card-body text-center">
+                                            <i class="fas fa-building fa-2x mb-2"></i>
+                                            <h4>{{getTotalBranches()}}</h4>
+                                            <p class="mb-0">סה"כ סניפים</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Filters for Computers -->
+                            <div class="row mb-4">
+                                <div class="col-12">
+                                    <div class="card">
+                                        <div class="card-header">
+                                            <h5 class="mb-0"><i class="fas fa-filter me-2"></i>פילטרים לסטטיסטיקות מחשבים</h5>
+                                        </div>
+                                        <div class="card-body">
+                                            <div class="row">
+                                                <div class="col-md-4">
+                                                    <label class="filter-label">חנות:</label>
+                                                    <select class="form-control" ng-model="computerFilters.store" ng-change="applyComputerFilters()">
+                                                        <option value="">כל החנויות</option>
+                                                        <option ng-repeat="store in getUniqueComputerStores()" value="{{store}}">{{getStoreName(store)}}</option>
+                                                    </select>
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <label class="filter-label">סניף:</label>
+                                                    <select class="form-control" ng-model="computerFilters.branch" ng-change="applyComputerFilters()">
+                                                        <option value="">כל הסניפים</option>
+                                                        <option ng-repeat="branch in getUniqueComputerBranches()" value="{{branch}}">{{getBranchName(branch)}}</option>
+                                                    </select>
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <label class="filter-label">פעולות:</label>
+                                                    <div class="mt-2">
+                                                        <button class="btn btn-outline-secondary btn-sm" ng-click="clearComputerFilters()">
+                                                            <i class="fas fa-times me-1"></i>נקה פילטרים
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Computers Data Table -->
+                            <div class="row">
+                                <div class="col-12">
+                                    <div class="card">
+                                        <div class="card-header d-flex justify-content-between align-items-center">
+                                            <h5 class="mb-0">
+                                                <i class="fas fa-table me-2"></i>טבלת סטטיסטיקות מחשבים
+                                                <span class="badge badge-primary">{{computersData.length}} מחשבים</span>
+                                            </h5>
+                                            <button class="btn btn-outline-primary btn-sm" ng-click="exportComputersToCSV()">
+                                                <i class="fas fa-download me-1"></i>ייצא ל-CSV
+                                            </button>
+                                            <button class="btn btn-outline-success btn-sm ml-2" ng-click="exportComputersToExcel()">
+                                                <i class="fas fa-file-excel me-1"></i>ייצא לאקסל
+                                            </button>
+                                        </div>
+                                        <div class="card-body">
+                                            <div class="table-responsive">
+                                                <table class="table table-striped table-hover">
+                                                    <thead class="thead-dark">
+                                                        <tr>
+                                                            <th>מזהה מחשב</th>
+                                                            <th style="cursor: pointer;" ng-click="sortBy('branchId')">
+                                                                סניף <i class="fas fa-sort"></i>
+                                                            </th>
+                                                            <th style="cursor: pointer;" ng-click="sortBy('storeId')">
+                                                                חנות <i class="fas fa-sort"></i>
+                                                            </th>
+                                                            <th>סה"כ טעינות</th>
+                                                            <th>מספר תזוזות עכבר</th>
+                                                            <th>תאריך טעינה ראשונה</th>
+                                                            <th>תאריך טעינה אחרונה</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        <tr ng-repeat="computer in (filteredComputersData.length > 0 ? filteredComputersData : computersData) | orderBy: sortField: sortReverse">
+                                                            <td>
+                                                                <span class="badge badge-info">{{computer.computerId}}</span>
+                                                            </td>
+                                                            <td>{{getBranchName(computer.branchId)}}</td>
+                                                            <td>{{getStoreName(computer.storeId)}}</td>
+                                                            <td>
+                                                                <span class="badge badge-success">{{computer.totalLoadings}}</span>
+                                                            </td>
+                                                            <td>
+                                                                <span class="badge badge-warning">{{computer.mouseMoves}}</span>
+                                                            </td>
+                                                            <td>{{computer.firstDate | date: 'short'}}</td>
+                                                            <td>{{computer.lastDate | date: 'short'}}</td>
+                                                        </tr>
                                                     </tbody>
                                                 </table>
                                             </div>
