@@ -4908,6 +4908,12 @@ app.controller('MainController', function ($scope, $http, $timeout) {
     
     // Filtered computers data
     $scope.filteredComputersData = [];
+    
+    // Store filters for active computers report
+    $scope.storeFilter = '';
+    $scope.computerStatusFilter = '';
+    $scope.storesData = [];
+    $scope.filteredStoresData = [];
 
     // Stations data
     $scope.stationsData = [];
@@ -5813,6 +5819,166 @@ app.controller('MainController', function ($scope, $http, $timeout) {
         $scope.applyComputerFilters();
     };
     
+    // Check if computer is active (at least 5 loadings)
+    $scope.isComputerActive = function(computer) {
+        return (computer.totalLoadings >= 5);
+    };
+    
+    // Process stores data for active computers report
+    $scope.processStoresData = function() {
+        try {
+            if (!$scope.computersData || $scope.computersData.length === 0) {
+                $scope.storesData = [];
+                $scope.filteredStoresData = [];
+                return;
+            }
+            
+            const storesMap = new Map();
+            
+            $scope.computersData.forEach(computer => {
+                if (!storesMap.has(computer.storeId)) {
+                    storesMap.set(computer.storeId, {
+                        storeId: computer.storeId,
+                        totalComputers: 0,
+                        activeComputers: 0,
+                        inactiveComputers: 0,
+                        activePercentage: 0
+                    });
+                }
+                
+                let store = storesMap.get(computer.storeId);
+                store.totalComputers++;
+                
+                if ($scope.isComputerActive(computer)) {
+                    store.activeComputers++;
+                } else {
+                    store.inactiveComputers++;
+                }
+            });
+            
+            // Calculate percentages
+            storesMap.forEach(store => {
+                store.activePercentage = store.totalComputers > 0 ? 
+                    Math.round((store.activeComputers / store.totalComputers) * 100) : 0;
+            });
+            
+            $scope.storesData = Array.from(storesMap.values());
+            $scope.applyStoreFilters();
+        } catch (error) {
+            console.error('Error processing stores data:', error);
+            $scope.storesData = [];
+            $scope.filteredStoresData = [];
+        }
+    };
+    
+    // Get unique stores
+    $scope.getUniqueStores = function() {
+        if (!$scope.storesData) return [];
+        return $scope.storesData.map(store => store.storeId).sort();
+    };
+    
+    // Apply store filters
+    $scope.applyStoreFilters = function() {
+        if (!$scope.storesData) {
+            $scope.filteredStoresData = [];
+            return;
+        }
+        
+        $scope.filteredStoresData = $scope.storesData.filter(store => {
+            let matches = true;
+            
+            if ($scope.storeFilter && store.storeId != $scope.storeFilter) {
+                matches = false;
+            }
+            
+            if ($scope.computerStatusFilter === 'active' && store.activeComputers === 0) {
+                matches = false;
+            }
+            
+            if ($scope.computerStatusFilter === 'inactive' && store.activeComputers > 0) {
+                matches = false;
+            }
+            
+            return matches;
+        });
+    };
+    
+    // Clear store filters
+    $scope.clearStoreFilters = function() {
+        $scope.storeFilter = '';
+        $scope.computerStatusFilter = '';
+        $scope.applyStoreFilters();
+    };
+    
+    // Statistics functions for active computers report
+    $scope.getTotalStores = function() {
+        return $scope.filteredStoresData ? $scope.filteredStoresData.length : 0;
+    };
+    
+    $scope.getTotalActiveComputers = function() {
+        if (!$scope.filteredStoresData) return 0;
+        return $scope.filteredStoresData.reduce((sum, store) => sum + store.activeComputers, 0);
+    };
+    
+    $scope.getTotalInactiveComputers = function() {
+        if (!$scope.filteredStoresData) return 0;
+        return $scope.filteredStoresData.reduce((sum, store) => sum + store.inactiveComputers, 0);
+    };
+    
+    $scope.getAverageActiveComputersPerStore = function() {
+        if (!$scope.filteredStoresData || $scope.filteredStoresData.length === 0) return 0;
+        const totalActive = $scope.getTotalActiveComputers();
+        return Math.round((totalActive / $scope.filteredStoresData.length) * 10) / 10;
+    };
+    
+    $scope.getFilteredStoresCount = function() {
+        return $scope.filteredStoresData ? $scope.filteredStoresData.length : 0;
+    };
+    
+    $scope.getFilteredActiveComputersCount = function() {
+        return $scope.getTotalActiveComputers();
+    };
+    
+    // Get store computers
+    $scope.getStoreComputers = function(storeId) {
+        if (!$scope.computersData) return [];
+        return $scope.computersData.filter(computer => computer.storeId === storeId);
+    };
+    
+    // Show store details
+    $scope.showStoreDetails = function(storeId) {
+        const computers = $scope.getStoreComputers(storeId);
+        let details = `חנות: ${$scope.getStoreName(storeId)}\n\n`;
+        computers.forEach(computer => {
+            const status = $scope.isComputerActive(computer) ? 'פעיל' : 'לא פעיל';
+            details += `מחשב ${computer.computerId} (${$scope.getBranchName(computer.branchId)}): ${computer.totalLoadings} טעינות - ${status}\n`;
+        });
+        alert(details);
+    };
+    
+    // Export stores to Excel
+    $scope.exportStoresToExcel = function() {
+        try {
+            const data = $scope.filteredStoresData.map(store => ({
+                'חנות': $scope.getStoreName(store.storeId),
+                'סך מחשבים': store.totalComputers,
+                'מחשבים פעילים': store.activeComputers,
+                'מחשבים לא פעילים': store.inactiveComputers,
+                'אחוז פעילות': store.activePercentage + '%'
+            }));
+            
+            const ws = XLSX.utils.json_to_sheet(data);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, 'דוח מחשבים פעילים');
+            
+            const fileName = `דוח_מחשבים_פעילים_לפי_חנות_${new Date().toISOString().split('T')[0]}.xlsx`;
+            XLSX.writeFile(wb, fileName);
+        } catch (error) {
+            console.error('Error exporting to Excel:', error);
+            alert('שגיאה בייצוא הקובץ');
+        }
+    };
+    
     // Export computers data to CSV
     $scope.exportComputersToCSV = function () {
         try {
@@ -5838,6 +6004,15 @@ app.controller('MainController', function ($scope, $http, $timeout) {
         } catch (error) {
             console.error('Error exporting computers data:', error);
             alert('שגיאה בייצוא הנתונים: ' + error.message);
+        }
+    };
+
+    // Toggle active computers report
+    $scope.showActiveComputersReport = false;
+    $scope.toggleActiveComputersReport = function() {
+        $scope.showActiveComputersReport = !$scope.showActiveComputersReport;
+        if ($scope.showActiveComputersReport) {
+            $scope.processStoresData();
         }
     };
 
