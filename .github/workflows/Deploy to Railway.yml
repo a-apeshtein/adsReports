@@ -3,16 +3,20 @@ name: Deploy to Railway
 on:
   push:
     branches:
-      - main  # תוכל לשנות ל- 'master' אם זה הברנץ' שלך
+      - main
 
 jobs:
   deploy:
-    name: Deploy App
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
 
       - name: Install Railway CLI
         run: npm install -g @railway/cli
@@ -20,4 +24,5 @@ jobs:
       - name: Deploy to Railway
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
-        run: railway up --service ${{ secrets.RAILWAY_SERVICE_NAME }}
+        # run: railway up
+        run: railway up --service=${{ secrets.RAILWAY_SERVICE_NAME }}
